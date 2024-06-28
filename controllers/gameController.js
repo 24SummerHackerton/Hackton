@@ -114,6 +114,7 @@ exports.updateTeam = async (req, res) => {
   
 
 exports.createBracket = async (req, res) => {
+    console.log('createBracket function called');
     try {
       const game = await Game.findById(req.params.id);
       if (!game) {
@@ -140,6 +141,7 @@ exports.createBracket = async (req, res) => {
   
       const bracket = new Bracket({ game: game._id, matches });
       await bracket.save();
+      console.log('Bracket created:', JSON.stringify(bracket, null, 2));
   
       res.status(201).send(bracket);
     } catch (err) {
@@ -184,4 +186,3 @@ exports.updateTeamInGame = async (req, res) => {
     res.status(500).send('Error updating team.');
   }
 };
-

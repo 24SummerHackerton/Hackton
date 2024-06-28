@@ -11,13 +11,14 @@
     <h1>Manage Games</h1>
     <div id="game-list"></div>
     <h2>Brackets</h2>
-    <div id="bracket-list"></div>
+    <div id="bracket-list"></div> <!-- 브래킷 리스트 컨테이너 -->
     <a href="/createGame.html">
       <button>Create a New Game</button>
     </a>
   </div>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // 게임 목록 가져오기
       fetch('/api/games')
         .then(response => response.json())
         .then(games => {
@@ -36,6 +37,7 @@
         })
         .catch(err => console.error('Error fetching games:', err));
 
+      // 브래킷 목록 가져오기
       fetch('/api/brackets')
         .then(response => response.json())
         .then(brackets => {
@@ -44,7 +46,11 @@
           brackets.forEach(bracket => {
             html += `
               <li>
-                ${bracket.game.name} - Schedule: ${bracket.schedule}
+                ${bracket.game.name} - Schedule: ${bracket.matches.map(match => `
+                  <div>
+                    ${match.teamA} vs ${match.teamB} - ${new Date(match.date).toLocaleString()}
+                  </div>
+                `).join('')}
               </li>
             `;
           });

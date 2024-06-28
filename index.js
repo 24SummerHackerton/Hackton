@@ -9,13 +9,14 @@ const mongoose = require('mongoose');
 
 const Game = require('./models/Game');
 const User = require('./models/User');
+const Bracket = require('./models/Bracket');
 
 const app = express();
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // MongoDB 연결
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected...'))
   .catch(err => console.log('MongoDB connection error:', err));
 
@@ -40,14 +41,14 @@ passport.deserializeUser(function(obj, done) {
 
 // 미들웨어 설정
 app.use(session({
-  secret: process.env.SECRET_KEY,
-  resave: false,
-  saveUninitialized: false
-}));
-app.use(passport.initialize());
-app.use(passport.session());
-app.use(express.static('public'));
-
+    secret: process.env.SECRET_KEY,
+    resave: false,
+    saveUninitialized: false
+  }));
+  app.use(passport.initialize());
+  app.use(passport.session());
+  app.use(express.static('public'));
+  
 // 라우트 설정
 app.use('/games', require('./routes/gameRoutes'));
 app.use('/schedules', require('./routes/scheduleRoutes'));
@@ -147,7 +148,8 @@ app.get('/api/games/:id', async (req, res) => {
       res.redirect('/');
     }
   });
-  
+
+
   app.post('/create-game', async (req, res) => {
     if (req.isAuthenticated()) {
       const { name, maxParticipants, rules } = req.body;
@@ -163,6 +165,21 @@ app.get('/api/games/:id', async (req, res) => {
       res.redirect('/');
     }
   });  
+
+  app.get('/api/brackets', async (req, res) => {
+    if (req.isAuthenticated()) {
+      try {
+        const brackets = await Bracket.find({}).populate('game');
+        res.json(brackets);
+      } catch (err) {
+        console.error('Error fetching brackets:', err);
+        res.status(500).send('Error fetching brackets.');
+      }
+    } else {
+      res.redirect('/');
+    }
+  });
+  
 
 app.get('/auth/google',
   passport.authenticate('google', { scope: ['https://www.googleapis.com/auth/plus.login', 'email'] })

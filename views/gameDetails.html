@@ -9,9 +9,17 @@
 <body>
   <div class="container">
     <h1>Game Details</h1>
-    <div id="game-details"></div>
+    <div id="game-details">
+      <h2 id="game-name"></h2>
+      <p>Max Participants: <span id="max-participants"></span></p>
+      <p>Rules: <span id="rules"></span></p>
+      <p>Status: <span id="status"></span></p>
+    </div>
+    <h3>Teams</h3>
+    <div id="teams-list"></div>
+
+    <h3>Add Team</h3>
     <form id="add-team-form" method="post">
-      <h3>Add Team</h3>
       <label for="teamName">Team Name:</label>
       <input type="text" id="teamName" name="teamName" required>
       <br>
@@ -21,40 +29,64 @@
       <button type="submit">Add Team</button>
     </form>
     <button id="create-bracket-button">Create Bracket</button>
+    <div id="bracketContainer"></div>
     <a href="/manage.html">Back to Manage Games</a>
   </div>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       const gameId = urlParams.get('id');
+
       fetch(`/api/games/${gameId}`)
         .then(response => response.json())
         .then(game => {
-          const gameDetails = document.getElementById('game-details');
-          let html = `
-            <h2>${game.name}</h2>
-            <p>Max Participants: ${game.maxParticipants}</p>
-            <p>Rules: ${game.rules || '없음'}</p>
-            <p>Status: ${game.status}</p>
-            <h2>Teams</h2>
-            <ul>
-              ${game.teams.map(team => `
-                <li>
-                  ${team.name} - Players: ${team.players.join(', ')}
-                  <form action="/games/${game._id}/update-team" method="post">
-                    <input type="hidden" name="teamId" value="${team._id}">
-                    <input type="text" name="players" value="${team.players.join(', ')}">
-                    <button type="submit">Update Players</button>
-                  </form>
-                </li>`).join('')}
-            </ul>
-          `;
-          gameDetails.innerHTML = html;
+          document.getElementById('game-name').textContent = game.name;
+          document.getElementById('max-participants').textContent = game.maxParticipants;
+          document.getElementById('rules').textContent = game.rules || '없음';
+          document.getElementById('status').textContent = game.status;
+
+          const teamsList = document.getElementById('teams-list');
+          let html = '<ul>';
+          game.teams.forEach(team => {
+            html += `
+              <li>
+                ${team.name} - Players: ${team.players.join(', ')}
+                <form action="/games/${game._id}/update-team" method="post">
+                  <input type="hidden" name="teamId" value="${team._id}">
+                  <input type="text" name="players" value="${team.players.join(', ')}">
+                  <button type="submit">Update Players</button>
+                </form>
+              </li>`;
+          });
+          html += '</ul>';
+          teamsList.innerHTML = html;
         })
         .catch(err => console.error('Error fetching game details:', err));
 
       const addTeamForm = document.getElementById('add-team-form');
-      addTeamForm.action = `/games/${gameId}/add-team`;
+      addTeamForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const teamName = document.getElementById('teamName').value;
+        const players = document.getElementById('players').value;
+
+        fetch(`/games/${gameId}/add-team`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ teamName, players })
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              location.reload();
+            } else {
+              alert('Error adding team: ' + data.message);
+            }
+          })
+          .catch(err => console.error('Error adding team:', err));
+      });
 
       const createBracketButton = document.getElementById('create-bracket-button');
       createBracketButton.addEventListener('click', () => {
@@ -74,6 +106,19 @@
           .catch(err => console.error('Error creating bracket:', err));
       });
     });
+
+    function displayBracket(bracket) {
+      const bracketContainer = document.getElementById('bracketContainer');
+      if (bracketContainer) {
+        bracketContainer.innerHTML = ''; // 기존 내용 초기화
+
+        bracket.teams.forEach((team, index) => {
+          const matchElement = document.createElement('div');
+          matchElement.textContent = `Match ${index + 1}: ${team.name}`;
+          bracketContainer.appendChild(matchElement);
+        });
+      }
+    }
   </script>
 </body>
 </html>

@@ -1,19 +1,21 @@
 const mongoose = require('mongoose');
 
-const gameSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  maxParticipants: { type: Number, required: true },
+const GameSchema = new mongoose.Schema({
+  name: String,
+  maxParticipants: Number,
   rules: String,
-  status: { type: String, default: '모집중' },
+  status: String,
   teams: [{
-    name: { type: String, required: true },
-    players: [{ type: String }]
+    name: String,
+    players: [String]
   }],
   schedules: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Schedule'
+    round: String,
+    teamA: String,
+    teamB: String,
+    date: String,
+    uniqueId: String
   }]
 });
 
-const Game = mongoose.model('Game', gameSchema);
-module.exports = Game;
+module.exports = mongoose.model('Game', GameSchema);
