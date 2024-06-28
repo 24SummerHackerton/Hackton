@@ -56,6 +56,9 @@ app.use('/referees', require('./routes/refereeRoutes'));
 app.use('/teams', require('./routes/teamRoutes'));
 app.use('/results', require('./routes/resultRoutes'));
 
+// FE 전송 API 라우트
+app.use(require('./routes/api'));
+
 // 기본 라우트
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html');
