@@ -11,17 +11,17 @@
     <h1>Manage Games</h1>
     <div id="game-list"></div>
     <h2>Brackets</h2>
-    <div id="bracket-list"></div> <!-- 브래킷 리스트 컨테이너 -->
+    <div id="bracket-list"></div>
     <a href="/createGame.html">
       <button>Create a New Game</button>
     </a>
   </div>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // 게임 목록 가져오기
       fetch('/api/games')
         .then(response => response.json())
         .then(games => {
+          console.log('Fetched games:', games); // 게임 데이터 콘솔에 출력
           const gameList = document.getElementById('game-list');
           let html = '<ul>';
           games.forEach(game => {
@@ -37,24 +37,22 @@
         })
         .catch(err => console.error('Error fetching games:', err));
 
-      // 브래킷 목록 가져오기
       fetch('/api/brackets')
         .then(response => response.json())
         .then(brackets => {
+          console.log('Fetched brackets:', brackets); // 브래킷 데이터 콘솔에 출력
           const bracketList = document.getElementById('bracket-list');
-          let html = '<ul>';
+          let html = '<aside>';
           brackets.forEach(bracket => {
-            html += `
-              <li>
-                ${bracket.game.name} - Schedule: ${bracket.matches.map(match => `
-                  <div>
-                    ${match.teamA} vs ${match.teamB} - ${new Date(match.date).toLocaleString()}
-                  </div>
-                `).join('')}
-              </li>
-            `;
+            bracket.matches.forEach(match => {
+              html += `
+                <div>
+                  ${bracket.game.name} ㅣ ${match.teamA} vs ${match.teamB} ㅣ ${new Date(match.date).toLocaleString()}
+                </div>
+              `;
+            });
           });
-          html += '</ul>';
+          html += '</aside>';
           bracketList.innerHTML = html;
         })
         .catch(err => console.error('Error fetching brackets:', err));

@@ -96,8 +96,10 @@
             'Content-Type': 'application/json'
           }
         })
-          .then(response => {
-            if (response.ok) {
+          .then(response => response.json())
+          .then(bracket => {
+            if (bracket) {
+              console.log('Bracket created:', bracket); // 브라우저 콘솔에 로그 출력
               window.location.href = '/manage.html';
             } else {
               console.error('Error creating bracket');
@@ -112,13 +114,35 @@
       if (bracketContainer) {
         bracketContainer.innerHTML = ''; // 기존 내용 초기화
 
-        bracket.teams.forEach((team, index) => {
+        bracket.matches.forEach((match, index) => {
           const matchElement = document.createElement('div');
-          matchElement.textContent = `Match ${index + 1}: ${team.name}`;
+          matchElement.textContent = `Match ${index + 1}: ${match.teamA} vs ${match.teamB} - ${new Date(match.date).toLocaleString()}`;
           bracketContainer.appendChild(matchElement);
         });
       }
     }
+
+    document.getElementById('game-details-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    const formData = new FormData(event.target);
+    const data = {};
+    formData.forEach((value, key) => data[key] = value);
+
+    fetch('/api/save-game-details', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    }).then(response => {
+      if (response.ok) {
+        alert('Game details saved successfully');
+      } else {
+        alert('Error saving game details');
+      }
+    }).catch(error => console.error('Error:', error));
+  });
   </script>
 </body>
 </html>
