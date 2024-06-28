@@ -1,19 +1,19 @@
-// MongoDB 연결
-
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 
-const teamSchema = new Schema({
-  name: String,
-  players: [String]
-});
-
-const gameSchema = new Schema({
-  name: String,
-  maxParticipants: Number,
+const gameSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  maxParticipants: { type: Number, required: true },
   rules: String,
   status: { type: String, default: '모집중' },
-  teams: [teamSchema]
+  teams: [{
+    name: { type: String, required: true },
+    players: [{ type: String }]
+  }],
+  schedules: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Schedule'
+  }]
 });
 
-module.exports = mongoose.model('Game', gameSchema);
+const Game = mongoose.model('Game', gameSchema);
+module.exports = Game;

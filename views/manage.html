@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Games</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Manage Games</h1>
+    <div id="game-list"></div>
+    <h2>Brackets</h2>
+    <div id="bracket-list"></div>
+    <a href="/createGame.html">
+      <button>Create a New Game</button>
+    </a>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      fetch('/api/games')
+        .then(response => response.json())
+        .then(games => {
+          const gameList = document.getElementById('game-list');
+          let html = '<ul>';
+          games.forEach(game => {
+            html += `
+              <li>
+                ${game.name} - ${game.status}
+                <a href="/gameDetails.html?id=${game._id}">Details</a>
+              </li>
+            `;
+          });
+          html += '</ul>';
+          gameList.innerHTML = html;
+        })
+        .catch(err => console.error('Error fetching games:', err));
+
+      fetch('/api/brackets')
+        .then(response => response.json())
+        .then(brackets => {
+          const bracketList = document.getElementById('bracket-list');
+          let html = '<ul>';
+          brackets.forEach(bracket => {
+            html += `
+              <li>
+                ${bracket.game.name} - Schedule: ${bracket.schedule}
+              </li>
+            `;
+          });
+          html += '</ul>';
+          bracketList.innerHTML = html;
+        })
+        .catch(err => console.error('Error fetching brackets:', err));
+    });
+  </script>
+</body>
+</html>
