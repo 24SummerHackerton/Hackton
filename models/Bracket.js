@@ -6,7 +6,8 @@ const bracketSchema = new mongoose.Schema({
     {
       teamA: { type: String, required: true },
       teamB: { type: String, required: true },
-      date: { type: Date, default: Date.now }
+      date: { type: Date, default: Date.now },
+      gameId: { type: String, required: true }
     }
   ]
 });

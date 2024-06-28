@@ -55,9 +55,7 @@ app.use('/schedules', require('./routes/scheduleRoutes'));
 app.use('/referees', require('./routes/refereeRoutes'));
 app.use('/teams', require('./routes/teamRoutes'));
 app.use('/results', require('./routes/resultRoutes'));
-
-// FE 전송 API 라우트
-app.use(require('./routes/api'));
+app.use('/api', require('./routes/api'));  // 새로운 라우트 추가
 
 // 기본 라우트
 app.get('/', (req, res) => {
@@ -165,7 +163,7 @@ app.get('/api/games/:id', async (req, res) => {
       res.redirect('/');
     }
   });
-  
+
 app.post('/create-game', async (req, res) => {
     if (req.isAuthenticated()) {
       const { name, maxParticipants, rules } = req.body;
@@ -181,6 +179,10 @@ app.post('/create-game', async (req, res) => {
       res.redirect('/');
     }
   });
+
+app.get('/allData.html', (req, res) => {
+  res.sendFile(__dirname + '/views/allData.html');
+});
 
 app.get('/auth/google',
   passport.authenticate('google', { scope: ['https://www.googleapis.com/auth/plus.login', 'email'] })

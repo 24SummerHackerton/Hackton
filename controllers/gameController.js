@@ -2,6 +2,7 @@ const Game = require('../models/Game');
 const Player = require('../models/Player');
 const Bracket = require('../models/Bracket');
 
+// 모든 게임을 가져오는 함수
 exports.getAllGames = async (req, res) => {
     try {
       const games = await Game.find({});
@@ -12,6 +13,7 @@ exports.getAllGames = async (req, res) => {
     }
 };
 
+// 새로운 게임을 생성하는 함수
 exports.createGame = async (req, res) => {
     const { name, maxParticipants, rules } = req.body;
     const newGame = new Game({ name, maxParticipants, rules, status: '모집중' });
@@ -24,6 +26,7 @@ exports.createGame = async (req, res) => {
     }
 };
 
+// 특정 게임을 ID로 가져오는 함수
 exports.getGameById = async (req, res) => {
     try {
       const game = await Game.findById(req.params.id);
@@ -38,33 +41,7 @@ exports.getGameById = async (req, res) => {
     }
 };
 
-exports.addTeamToGame = async (req, res) => {
-    const { teamName, players } = req.body;
-    try {
-      const game = await Game.findById(req.params.id);
-      if (!game) {
-        res.status(404).send('Game not found.');
-      } else {
-        const isFull = game.teams.reduce((count, team) => count + team.players.length, 0) >= game.maxParticipants;
-        if (isFull) {
-          res.status(400).send('Game is already full.');
-        } else {
-          const playerData = players.map(player => {
-            const [department, studentId, name, phoneNumber] = player.split(',');
-            return new Player({ department, studentId, name, phoneNumber });
-          });
-  
-          game.teams.push({ name: teamName, players: playerData });
-          await game.save();
-          res.redirect(`/gameDetails.html?id=${game._id}`);
-        }
-      }
-    } catch (err) {
-      console.error('Error adding team:', err);
-      res.status(500).send('Error adding team.');
-    }
-};
-
+// 게임에 팀을 추가하는 함수
 exports.addTeam = async (req, res) => {
     if (req.isAuthenticated()) {
       const { teamName, players } = req.body;
@@ -73,9 +50,15 @@ exports.addTeam = async (req, res) => {
         if (!game) {
           res.status(404).send('Game not found.');
         } else {
-          game.teams.push({ name: teamName, players: players.split(',').map(player => player.trim()) });
-          await game.save();
-          res.redirect(`/gameDetails.html?id=${game._id}`);
+          const totalPlayers = game.teams.reduce((count, team) => count + team.players.length, 0);
+          const newPlayers = players.split(',').map(player => player.trim());
+          if (totalPlayers + newPlayers.length > game.maxParticipants) {
+            res.status(400).send('Game is already full.');
+          } else {
+            game.teams.push({ name: teamName, players: newPlayers });
+            await game.save();
+            res.redirect(`/gameDetails.html?id=${game._id}`);
+          }
         }
       } catch (err) {
         console.error('Error adding team:', err);
@@ -86,6 +69,31 @@ exports.addTeam = async (req, res) => {
     }
 };
 
+// 게임에 팀을 추가하는 함수
+exports.addTeamToGame = async (req, res) => {
+    const { teamName, players } = req.body;
+    try {
+      const game = await Game.findById(req.params.id);
+      if (!game) {
+        res.status(404).send('Game not found.');
+      } else {
+        const totalPlayers = game.teams.reduce((count, team) => count + team.players.length, 0);
+        const newPlayers = players.split(',').map(player => player.trim());
+        if (totalPlayers + newPlayers.length > game.maxParticipants) {
+          res.status(400).send('Game is already full.');
+        } else {
+          game.teams.push({ name: teamName, players: newPlayers });
+          await game.save();
+          res.redirect(`/gameDetails.html?id=${game._id}`);
+        }
+      }
+    } catch (err) {
+      console.error('Error adding team:', err);
+      res.status(500).send('Error adding team.');
+    }
+};
+
+// 팀을 업데이트하는 함수
 exports.updateTeam = async (req, res) => {
     if (req.isAuthenticated()) {
       const { teamId, players } = req.body;
@@ -112,6 +120,7 @@ exports.updateTeam = async (req, res) => {
     }
 };
 
+// 브래킷(대진표)을 생성하는 함수
 exports.createBracket = async (req, res) => {
     try {
         const game = await Game.findById(req.params.id);
@@ -124,14 +133,15 @@ exports.createBracket = async (req, res) => {
             return res.status(400).send('Not enough teams to create a bracket.');
         }
 
-        // Create matches for the bracket
+        // 브래킷을 생성하는 로직
         const matches = [];
         for (let i = 0; i < teams.length; i += 2) {
             if (i + 1 < teams.length) {
                 matches.push({
                     teamA: teams[i].name,
                     teamB: teams[i + 1].name,
-                    date: new Date() // Set the match date to current date for now
+                    date: new Date(), // 현재 날짜로 설정
+                    gameId: i + 1
                 });
             }
         }
@@ -143,7 +153,7 @@ exports.createBracket = async (req, res) => {
 
         await bracket.save();
 
-        console.log('Bracket created:', bracket); // Log bracket creation to the terminal
+        console.log('Bracket created:', bracket); // 터미널에 브래킷 생성 로그 출력
 
         res.status(201).send(bracket);
     } catch (err) {
@@ -153,16 +163,19 @@ exports.createBracket = async (req, res) => {
 };
 
 
+// 모든 브래킷을 가져오는 함수
 exports.getBrackets = async (req, res) => {
     try {
-      const brackets = await Bracket.find().populate('game');
-      res.json(brackets);
+        const brackets = await Bracket.find().populate('game');
+        res.json(brackets);
     } catch (err) {
-      console.error('Error fetching brackets:', err);
-      res.status(500).send('Error fetching brackets.');
+        console.error('Error fetching brackets:', err);
+        res.status(500).send('Error fetching brackets.');
     }
 };
 
+
+// 게임 내 팀을 업데이트하는 함수
 exports.updateTeamInGame = async (req, res) => {
     const { teamId, players } = req.body;
     try {

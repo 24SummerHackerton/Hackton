@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Data</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>All Data</h1>
+    <pre id="all-data"></pre>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      fetch('/api/all-data')
+        .then(response => response.json())
+        .then(data => {
+          console.log('Fetched all data:', data); // 모든 데이터 콘솔에 출력
+          document.getElementById('all-data').textContent = JSON.stringify(data, null, 2); // 화면에 JSON 형식으로 표시
+        })
+        .catch(err => console.error('Error fetching all data:', err));
+    });
+  </script>
+</body>
+</html>

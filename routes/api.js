@@ -8,7 +8,7 @@ const Schedule = require('../models/Schedule');
 const Team = require('../models/Team');
 const User = require('../models/User');
 
-router.get('/api/all-data', async (req, res) => {
+router.get('/all-data', async (req, res) => {
   try {
     const games = await Game.find({});
     const players = await Player.find({});

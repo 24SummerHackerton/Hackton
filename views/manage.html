@@ -42,17 +42,21 @@
         .then(brackets => {
           console.log('Fetched brackets:', brackets); // 브래킷 데이터 콘솔에 출력
           const bracketList = document.getElementById('bracket-list');
-          let html = '<aside>';
+          let html = '<ul>';
           brackets.forEach(bracket => {
-            bracket.matches.forEach(match => {
-              html += `
-                <div>
-                  ${bracket.game.name} ㅣ ${match.teamA} vs ${match.teamB} ㅣ ${new Date(match.date).toLocaleString()}
-                </div>
-              `;
-            });
+            if (bracket.matches && bracket.matches.length > 0) {
+              bracket.matches.forEach(match => {
+                html += `
+                  <li>
+                    ${bracket.game.name} ㅣ ${match.teamA} vs ${match.teamB} ㅣ ${new Date(match.date).toLocaleString()} ㅣ gameId: ${match.gameId}
+                  </li>
+                `;
+              });
+            } else {
+              html += `<li>No matches scheduled for ${bracket.game.name}</li>`;
+            }
           });
-          html += '</aside>';
+          html += '</ul>';
           bracketList.innerHTML = html;
         })
         .catch(err => console.error('Error fetching brackets:', err));
