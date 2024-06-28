@@ -15,7 +15,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // MongoDB 연결
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('MongoDB connected...'))
-  .catch(err => console.log(err));
+  .catch(err => console.log('MongoDB connection error:', err));
 
 // 구글 OAuth 2.0 설정
 passport.use(new GoogleStrategy({
@@ -37,17 +37,18 @@ passport.deserializeUser(function(obj, done) {
 });
 
 // 미들웨어 설정
-app.use(session({ secret: process.env.SECRET_KEY, resave: true, saveUninitialized: true }));
+app.use(session({ 
+  secret: process.env.SECRET_KEY, 
+  resave: true, 
+  saveUninitialized: true 
+}));
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static('public'));
 
 // 라우트 설정
 app.get('/', (req, res) => {
-  res.send(`
-    <h1>Login with Google</h1>
-    <a href="/auth/google">Login with Google</a>
-  `);
+  res.sendFile(__dirname + '/views/index.html');
 });
 
 app.get('/auth/google',
@@ -61,9 +62,10 @@ app.get('/auth/google/callback',
   }
 );
 
-app.get('/games', (req, res) => {
+app.get('/games', async (req, res) => {
   if (req.isAuthenticated()) {
-    Game.find({}, (err, games) => {
+    try {
+      const games = await Game.find({});
       if (games.length === 0) {
         res.redirect('/create-game');
       } else {
@@ -79,7 +81,10 @@ app.get('/games', (req, res) => {
           <a href="/create-game">Create a new game</a>
         `);
       }
-    });
+    } catch (err) {
+      console.error('Error fetching games:', err);
+      res.status(500).send('Error fetching games.');
+    }
   } else {
     res.redirect('/');
   }
@@ -93,63 +98,78 @@ app.get('/create-game', (req, res) => {
   }
 });
 
-app.post('/create-game', (req, res) => {
+app.post('/create-game', async (req, res) => {
   if (req.isAuthenticated()) {
     const { name, maxParticipants, rules } = req.body;
     const newGame = new Game({ name, maxParticipants, rules });
-    newGame.save(err => {
-      if (err) return res.status(500).send('Error creating game.');
+    try {
+      await newGame.save();
       res.redirect('/games');
-    });
+    } catch (err) {
+      console.error('Error creating game:', err);
+      res.status(500).send('Error creating game.');
+    }
   } else {
     res.redirect('/');
   }
 });
 
-app.get('/games/:id', (req, res) => {
+app.get('/games/:id', async (req, res) => {
   if (req.isAuthenticated()) {
-    Game.findById(req.params.id, (err, game) => {
-      if (err) return res.status(500).send('Game not found.');
-      res.send(`
-        <h1>${game.name}</h1>
-        <p>Status: ${game.status}</p>
-        <p>Rules: ${game.rules}</p>
-        <h2>Teams</h2>
-        <ul>
-          ${game.teams.map(team => `
-            <li>
-              ${team.name} - Players: ${team.players.join(', ')}
-            </li>`).join('')}
-        </ul>
-        <form action="/games/${game._id}/add-team" method="post">
-          <h3>Add Team</h3>
-          <label for="teamName">Team Name:</label>
-          <input type="text" id="teamName" name="teamName" required>
-          <br>
-          <label for="players">Players (comma separated):</label>
-          <input type="text" id="players" name="players" required>
-          <br>
-          <button type="submit">Add Team</button>
-        </form>
-        <a href="/games">Back to Game List</a>
-      `);
-    });
+    try {
+      const game = await Game.findById(req.params.id);
+      if (!game) {
+        res.status(404).send('Game not found.');
+      } else {
+        res.send(`
+          <h1>${game.name}</h1>
+          <p>Status: ${game.status}</p>
+          <p>Rules: ${game.rules}</p>
+          <h2>Teams</h2>
+          <ul>
+            ${game.teams.map(team => `
+              <li>
+                ${team.name} - Players: ${team.players.join(', ')}
+              </li>`).join('')}
+          </ul>
+          <form action="/games/${game._id}/add-team" method="post">
+            <h3>Add Team</h3>
+            <label for="teamName">Team Name:</label>
+            <input type="text" id="teamName" name="teamName" required>
+            <br>
+            <label for="players">Players (comma separated):</label>
+            <input type="text" id="players" name="players" required>
+            <br>
+            <button type="submit">Add Team</button>
+          </form>
+          <a href="/games">Back to Game List</a>
+        `);
+      }
+    } catch (err) {
+      console.error('Error fetching game details:', err);
+      res.status(500).send('Error fetching game details.');
+    }
   } else {
     res.redirect('/');
   }
 });
 
-app.post('/games/:id/add-team', (req, res) => {
+app.post('/games/:id/add-team', async (req, res) => {
   if (req.isAuthenticated()) {
     const { teamName, players } = req.body;
-    Game.findById(req.params.id, (err, game) => {
-      if (err) return res.status(500).send('Game not found.');
-      game.teams.push({ name: teamName, players: players.split(',').map(player => player.trim()) });
-      game.save(err => {
-        if (err) return res.status(500).send('Error adding team.');
+    try {
+      const game = await Game.findById(req.params.id);
+      if (!game) {
+        res.status(404).send('Game not found.');
+      } else {
+        game.teams.push({ name: teamName, players: players.split(',').map(player => player.trim()) });
+        await game.save();
         res.redirect(`/games/${game._id}`);
-      });
-    });
+      }
+    } catch (err) {
+      console.error('Error adding team:', err);
+      res.status(500).send('Error adding team.');
+    }
   } else {
     res.redirect('/');
   }
