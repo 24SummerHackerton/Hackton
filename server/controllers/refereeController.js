@@ -1,28 +1,38 @@
 const Referee = require('../models/Referee');
 
 exports.getAllReferees = async (req, res) => {
-  const referees = await Referee.find();
-  res.json(referees);
-};
-
-exports.getRefereeDetails = async (req, res) => {
-  const referee = await Referee.findById(req.params.id).populate('assignedGames');
-  res.json(referee);
+  try {
+    const referees = await Referee.find();
+    res.json(referees);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching referees', error });
+  }
 };
 
 exports.createReferee = async (req, res) => {
-  const { name, department, contact } = req.body;
-  const newReferee = new Referee({ name, department, contact });
-  await newReferee.save();
-  res.json(newReferee);
+  try {
+    const newReferee = new Referee(req.body);
+    await newReferee.save();
+    res.status(201).json(newReferee);
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating referee', error });
+  }
 };
 
 exports.updateReferee = async (req, res) => {
-  const { name, department, contact } = req.body;
-  const referee = await Referee.findById(req.params.id);
-  referee.name = name;
-  referee.department = department;
-  referee.contact = contact;
-  await referee.save();
-  res.json(referee);
+  try {
+    const updatedReferee = await Referee.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updatedReferee);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating referee', error });
+  }
+};
+
+exports.deleteReferee = async (req, res) => {
+  try {
+    await Referee.findByIdAndDelete(req.params.id);
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting referee', error });
+  }
 };

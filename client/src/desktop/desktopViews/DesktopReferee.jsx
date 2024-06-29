@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import refereeData from "./refData.json";  // JSON 파일을 불러옵니다.
+import axios from 'axios';
 
 export default function DesktopReferee() {
   const [referees, setReferees] = useState([]);
@@ -15,27 +15,41 @@ export default function DesktopReferee() {
   const [isAdding, setIsAdding] = useState(false);
 
   useEffect(() => {
-    // JSON 데이터를 불러와서 심판 리스트를 설정합니다.
-    setReferees(refereeData.map(item => ({
-      college: item[0],
-      department: item[1],
-      studentId: item[2],
-      name: item[3],
-      phone: item[4],
-      team: item[5]
-    })));
+    fetchReferees();
   }, []);
+
+  const fetchReferees = async () => {
+    try {
+      const response = await axios.get('http://localhost:5001/referees');
+      setReferees(response.data);
+    } catch (error) {
+      console.error('Error fetching referees:', error);
+    }
+  };
 
   const handleEditReferee = (index) => {
     setEditingReferee(index);
   };
 
-  const handleSaveReferee = (index) => {
-    setEditingReferee(null);
+  const handleSaveReferee = async (index) => {
+    const updatedReferee = referees[index];
+    try {
+      await axios.patch(`http://localhost:5001/referees/${updatedReferee._id}`, updatedReferee);
+      setEditingReferee(null);
+      fetchReferees(); // Save 후 데이터 새로고침
+    } catch (error) {
+      console.error('Error saving referee:', error);
+    }
   };
 
-  const handleDeleteReferee = (index) => {
-    setReferees(prevReferees => prevReferees.filter((_, i) => i !== index));
+  const handleDeleteReferee = async (index) => {
+    const refereeId = referees[index]._id;
+    try {
+      await axios.delete(`http://localhost:5001/referees/${refereeId}`);
+      setReferees(prevReferees => prevReferees.filter((_, i) => i !== index));
+    } catch (error) {
+      console.error('Error deleting referee:', error);
+    }
   };
 
   const handleInputChange = (e, field, index) => {
@@ -59,17 +73,22 @@ export default function DesktopReferee() {
     setIsAdding(true);
   };
 
-  const handleSaveNewReferee = () => {
-    setReferees(prevReferees => [...prevReferees, newReferee]);
-    setNewReferee({
-      college: "",
-      department: "",
-      studentId: "",
-      name: "",
-      phone: "",
-      team: ""
-    });
-    setIsAdding(false);
+  const handleSaveNewReferee = async () => {
+    try {
+      await axios.post('http://localhost:5001/referees', newReferee);
+      setNewReferee({
+        college: "",
+        department: "",
+        studentId: "",
+        name: "",
+        phone: "",
+        team: ""
+      });
+      setIsAdding(false);
+      fetchReferees(); // Save 후 데이터 새로고침
+    } catch (error) {
+      console.error('Error saving new referee:', error);
+    }
   };
 
   const handleCancelNewReferee = () => {

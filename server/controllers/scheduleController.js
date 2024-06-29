@@ -1,27 +1,45 @@
 const Schedule = require('../models/Schedule');
 
 exports.getAllSchedules = async (req, res) => {
-  const schedules = await Schedule.find().populate('game teamA teamB referee');
-  res.json(schedules);
+  try {
+    const schedules = await Schedule.find().populate('game teamA teamB referee');
+    res.json(schedules);
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching schedules' });
+  }
 };
 
 exports.createSchedule = async (req, res) => {
-  const { gameId, teamAId, teamBId, date, refereeId } = req.body;
-  const newSchedule = new Schedule({ game: gameId, teamA: teamAId, teamB: teamBId, date, referee: refereeId });
-  await newSchedule.save();
-  res.json(newSchedule);
+  try {
+    const { game, teamA, teamB, date } = req.body;
+    const newSchedule = new Schedule({
+      game,
+      teamA,
+      teamB,
+      date,
+      status: 'upcoming'
+    });
+    await newSchedule.save();
+    res.status(201).json(newSchedule);
+  } catch (error) {
+    res.status(500).json({ error: 'Error creating schedule' });
+  }
 };
 
 exports.getScheduleDetails = async (req, res) => {
-  const schedule = await Schedule.findById(req.params.id).populate('game teamA teamB referee');
-  res.json(schedule);
+  try {
+    const schedule = await Schedule.findById(req.params.id).populate('game teamA teamB referee');
+    res.json(schedule);
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching schedule details' });
+  }
 };
 
 exports.updateSchedule = async (req, res) => {
-  const { score, result } = req.body;
-  const schedule = await Schedule.findById(req.params.id);
-  schedule.score = score;
-  schedule.result = result;
-  await schedule.save();
-  res.json(schedule);
+  try {
+    const updatedSchedule = await Schedule.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updatedSchedule);
+  } catch (error) {
+    res.status(500).json({ error: 'Error updating schedule' });
+  }
 };

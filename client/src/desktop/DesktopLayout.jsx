@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
 import Navigation from "./components/navigation";
-import LoginStatus from "./components/loginStatus";
+import LoginStatus from "./components/LoginStatus";
 
 export default function DesktopLayout() {
   return (

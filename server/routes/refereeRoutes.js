@@ -3,8 +3,8 @@ const router = express.Router();
 const refereeController = require('../controllers/refereeController');
 
 router.get('/', refereeController.getAllReferees);
-router.get('/:id', refereeController.getRefereeDetails);
-router.post('/create', refereeController.createReferee);
-router.post('/:id/update', refereeController.updateReferee);
+router.post('/', refereeController.createReferee);
+router.patch('/:id', refereeController.updateReferee);
+router.delete('/:id', refereeController.deleteReferee);
 
 module.exports = router;

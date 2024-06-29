@@ -31,14 +31,14 @@ export default function ScheduleCard({ schedule }) {
   return (
     <div className="flex justify-between gap-5 items-center">
       <div className="font-bold text-[18px] flex gap-3 items-center px-3 w-full">
-        {selectIcon(schedule[0])}
-        {schedule[2]} vs {schedule[3]}
+        {selectIcon(schedule.game.sport)}
+        {schedule.teamA.name} vs {schedule.teamB.name}
       </div>
       <div className="text-center text-blue-600">
-        <div>{schedule[4]}</div>
-        <div>{schedule[1]}</div>
+        <div>{new Date(schedule.date).toLocaleDateString()}</div>
+        <div>{schedule.status}</div>
       </div>
-      <div>{typeResult(schedule[0], schedule[5])}</div>
+      <div>{typeResult(schedule.game.sport, schedule._id)}</div>
     </div>
   );
 }

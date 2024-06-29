@@ -1,5 +1,5 @@
 import { useRecoilState, useRecoilValue } from "recoil";
-import ScheduleCard from "./scheduleCard";
+import ScheduleCard from "../components/ScheduleCard";
 import { resultList, scheduleStatus } from "../../atom";
 import { useEffect } from "react";
 import ResultCard from "./resultCard";

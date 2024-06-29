@@ -8,7 +8,8 @@ const scheduleSchema = new Schema({
   date: Date,
   referee: { type: Schema.Types.ObjectId, ref: 'User' },
   status: { type: String, enum: ['upcoming', 'completed'], default: 'upcoming' },
-  score: String,
+  scoreA: Number,
+  scoreB: Number,
   result: String // 승/패/무
 });
 

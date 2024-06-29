@@ -1,20 +1,37 @@
 import React, { useState, useEffect } from "react";
-import scheduleData from "./schedule.json";
+import axios from 'axios';
+import ScheduleCard from "../components/ScheduleCard";
 
 export default function DesktopSchedule() {
+  const [schedules, setSchedules] = useState([]);
   const [sports, setSports] = useState([]);
   const [editing, setEditing] = useState(null);
 
   useEffect(() => {
-    const parsedData = scheduleData.reduce((acc, item) => {
-      const [sport, round, teamA, teamB, date] = item;
-      if (!acc[sport]) {
-        acc[sport] = [];
+    const fetchSchedules = async () => {
+      try {
+        const response = await axios.get('/schedules');
+        setSchedules(response.data);
+        
+        const parsedData = response.data.reduce((acc, item) => {
+          const sport = item.game.sport;
+          const round = item.game.round;
+          const teamA = item.teamA.name;
+          const teamB = item.teamB.name;
+          const date = new Date(item.date).toLocaleDateString();
+          if (!acc[sport]) {
+            acc[sport] = [];
+          }
+          acc[sport].push({ round, teamA, teamB, date, scoreA: item.scoreA || 0, scoreB: item.scoreB || 0 });
+          return acc;
+        }, {});
+        setSports(Object.entries(parsedData));
+      } catch (error) {
+        console.error('Error fetching schedules:', error);
       }
-      acc[sport].push({ round, teamA, teamB, date, scoreA: 0, scoreB: 0 });
-      return acc;
-    }, {});
-    setSports(Object.entries(parsedData));
+    };
+
+    fetchSchedules();
   }, []);
 
   const handleScoreEdit = (sport, matchIndex) => {
@@ -31,21 +48,66 @@ export default function DesktopSchedule() {
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async (sport, matchIndex) => {
     setEditing(null);
-    //서버에 업데이트
+    const updatedMatch = sports.find(([name]) => name === sport)[1][matchIndex];
+    const scheduleToUpdate = schedules.find(schedule => 
+      schedule.game.sport === sport && 
+      schedule.teamA.name === updatedMatch.teamA &&
+      schedule.teamB.name === updatedMatch.teamB &&
+      new Date(schedule.date).toLocaleDateString() === updatedMatch.date
+    );
+
+    try {
+      await axios.post(`/schedules/${scheduleToUpdate._id}/update`, {
+        scoreA: updatedMatch.scoreA,
+        scoreB: updatedMatch.scoreB
+      });
+    } catch (error) {
+      console.error('Error updating schedule:', error);
+    }
+  };
+
+  const handleCreateSchedule = async (e) => {
+    e.preventDefault();
+    const newSchedule = {
+      game: { sport: e.target.sport.value, round: e.target.round.value },
+      teamA: e.target.teamA.value,
+      teamB: e.target.teamB.value,
+      date: new Date(e.target.date.value)
+    };
+    try {
+      await axios.post('/schedules/create', newSchedule);
+      // 새 일정을 추가한 후 일정을 다시 불러옵니다.
+      const response = await axios.get('/schedules');
+      setSchedules(response.data);
+    } catch (error) {
+      console.error('Error creating schedule:', error);
+    }
   };
 
   return (
     <div className="p-4 w-[700px]">
       <h1 className="text-[30px] font-bold text-center mb-10">경기일정관리</h1>
+      {/* 새로운 일정 생성 폼 */}
+      <div>
+        <h2>새 일정 추가</h2>
+        <form onSubmit={handleCreateSchedule}>
+          <input name="sport" placeholder="종목" required />
+          <input name="round" placeholder="라운드" required />
+          <input name="teamA" placeholder="팀 A" required />
+          <input name="teamB" placeholder="팀 B" required />
+          <input type="date" name="date" placeholder="날짜" required />
+          <button type="submit">추가</button>
+        </form>
+      </div>
       {sports.map(([sport, matches], sportIndex) => (
         <div key={sportIndex} className="mb-8 font-bold">
           <div className="border-2 rounded-2xl p-4">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">{sport}</h2>
               {editing && editing.sport === sport ? (
-                <button onClick={handleSave} className="bg-blue-500 text-white px-4 py-2 rounded-2xl">
+                <button onClick={() => handleSave(editing.sport, editing.matchIndex)} className="bg-blue-500 text-white px-4 py-2 rounded-2xl">
                   저장
                 </button>
               ) : (

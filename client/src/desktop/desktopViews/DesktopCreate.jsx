@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 
 export default function DesktopCreate({ onClose, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -20,7 +21,7 @@ export default function DesktopCreate({ onClose, onSubmit }) {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const { eventName, participants } = formData;
     let valid = true;
@@ -40,8 +41,13 @@ export default function DesktopCreate({ onClose, onSubmit }) {
     }
 
     if (valid) {
-      onSubmit({ ...formData, teams: [] }); // Ensure teams is included
-      onClose();
+      try {
+        await axios.post('http://localhost:5001/games/create', formData);
+        onSubmit({ ...formData, teams: [] }); // Ensure teams is included
+        onClose();
+      } catch (error) {
+        console.error('Error creating game:', error);
+      }
     }
   };
 
